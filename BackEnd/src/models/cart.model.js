@@ -15,23 +15,15 @@ const cartSchema = new mongoose.Schema({
         quantity: {
             type: Number,
             required: true,
-            min: [1, 'Quantity must be at least 1'],
-            default: 1
+            min: 1
         }
     }],
     totalPrice: {
         type: Number,
-        required: true,
         default: 0
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: {
-        type: Date,
-        default: Date.now
     }
+}, {
+    timestamps: true
 });
 
 // Calculate total price before saving
@@ -46,7 +38,6 @@ cartSchema.pre('save', async function(next) {
     }
     
     this.totalPrice = total;
-    this.updatedAt = Date.now();
     next();
 });
 

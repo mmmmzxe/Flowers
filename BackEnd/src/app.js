@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const favoritesRouter = require('./routes/favorites');
 
 // Load environment variables
 dotenv.config();
@@ -19,6 +20,7 @@ mongoose.connect(process.env.MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true
 })
+
 .then(() => console.log('Connected to MongoDB'))
 .catch((err) => console.error('MongoDB connection error:', err));
 
@@ -28,6 +30,8 @@ app.use('/api/products', require('./routes/product.routes'));
 app.use('/api/categories', require('./routes/category.routes'));
 app.use('/api/cart', require('./routes/cart.routes'));
 app.use('/api/admin', require('./routes/admin.routes'));
+app.use('/api/favorites', favoritesRouter);
+
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -39,8 +43,4 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Start server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-}); 
+module.exports = app; 

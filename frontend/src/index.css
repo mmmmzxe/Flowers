@@ -2,10 +2,33 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Font declarations */
+@font-face {
+  font-family: 'KoPub Batang';
+  src: url('./assets/Fonts/kopub-batang/KoPubBatang-Regular.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'KoPub Batang';
+  src: url('./assets/Fonts/kopub-batang/KoPubBatang-Bold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'KoPub Batang';
+  src: url('./assets/Fonts/kopub-batang/KoPubBatang-Light.ttf') format('truetype');
+  font-weight: 300;
+  font-style: normal;
+}
+
 /* Custom styles */
 @layer base {
   body {
     @apply bg-gray-50;
+    font-family: 'KoPub Batang', serif;
   }
 }
 

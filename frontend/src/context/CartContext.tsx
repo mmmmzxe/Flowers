@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useEffect, type ReactNode, } from 'react';
-import { type Product } from '../services/api';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import type { Product, CartResponse } from '../services/api';
+import api from '../services/api';
 
 interface CartItem {
   product: Product;
@@ -8,91 +9,101 @@ interface CartItem {
 
 interface CartContextType {
   items: CartItem[];
-  addItem: (product: Product, quantity: number) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
-  clearCart: () => void;
-  totalItems: number;
+  addItem: (product: Product, quantity: number) => Promise<void>;
+  removeItem: (productId: string) => Promise<void>;
+  updateQuantity: (productId: string, quantity: number) => Promise<void>;
   totalPrice: number;
+  clearCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: ReactNode }) {
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [totalPrice, setTotalPrice] = useState(0);
 
-  // Load cart from localStorage on mount
+  // Fetch cart on mount
   useEffect(() => {
-    const savedCart = localStorage.getItem('cart');
-    if (savedCart) {
-      setItems(JSON.parse(savedCart));
+    const fetchCart = async () => {
+      try {
+        const response = await api.get<CartResponse>('/cart');
+        setItems(response.data.data.items);
+        calculateTotal(response.data.data.items);
+      } catch (error) {
+        console.error('Error fetching cart:', error);
+      }
+    };
+
+    if (localStorage.getItem('token')) {
+      fetchCart();
     }
   }, []);
 
-  // Save cart to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(items));
-  }, [items]);
-
-  const addItem = (product: Product, quantity: number) => {
-    setItems(currentItems => {
-      const existingItem = currentItems.find(item => item.product._id === product._id);
-      if (existingItem) {
-        return currentItems.map(item =>
-          item.product._id === product._id
-            ? { ...item, quantity: item.quantity + quantity }
-            : item
-        );
-      }
-      return [...currentItems, { product, quantity }];
-    });
-  };
-
-  const removeItem = (productId: string) => {
-    setItems(currentItems => currentItems.filter(item => item.product._id !== productId));
-  };
-
-  const updateQuantity = (productId: string, quantity: number) => {
-    setItems(currentItems =>
-      currentItems.map(item =>
-        item.product._id === productId
-          ? { ...item, quantity: Math.max(0, quantity) }
-          : item
-      ).filter(item => item.quantity > 0)
+  const calculateTotal = (cartItems: CartItem[]) => {
+    const total = cartItems.reduce((sum, item) => 
+      sum + (item.product.price * item.quantity), 0
     );
+    setTotalPrice(total);
   };
 
-  const clearCart = () => {
-    setItems([]);
+  const addItem = async (product: Product, quantity: number) => {
+    try {
+      const response = await api.post<CartResponse>('/cart/items', { productId: product._id, quantity });
+      setItems(response.data.data.items);
+      calculateTotal(response.data.data.items);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+    }
   };
 
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce(
-    (sum, item) => sum + item.product.price * item.quantity,
-    0
-  );
+  const removeItem = async (productId: string) => {
+    try {
+      const response = await api.delete<CartResponse>(`/cart/items/${productId}`);
+      setItems(response.data.data.items);
+      calculateTotal(response.data.data.items);
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+    }
+  };
+
+  const updateQuantity = async (productId: string, quantity: number) => {
+    try {
+      const response = await api.put<CartResponse>(`/cart/items/${productId}`, { quantity });
+      setItems(response.data.data.items);
+      calculateTotal(response.data.data.items);
+    } catch (error) {
+      console.error('Error updating cart:', error);
+    }
+  };
+
+  const clearCart = async () => {
+    try {
+      await api.delete<CartResponse>('/cart');
+      setItems([]);
+      setTotalPrice(0);
+    } catch (error) {
+      console.error('Error clearing cart:', error);
+    }
+  };
 
   return (
-    <CartContext.Provider
-      value={{
-        items,
-        addItem,
-        removeItem,
-        updateQuantity,
-        clearCart,
-        totalItems,
-        totalPrice,
-      }}
-    >
+    <CartContext.Provider value={{
+      items,
+      addItem,
+      removeItem,
+      updateQuantity,
+      totalPrice,
+      clearCart
+    }}>
       {children}
     </CartContext.Provider>
   );
-}
+};
 
-export function useCart() {
+export const useCart = () => {
   const context = useContext(CartContext);
   if (context === undefined) {
     throw new Error('useCart must be used within a CartProvider');
   }
   return context;
-} 
+}; 

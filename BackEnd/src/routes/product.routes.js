@@ -62,6 +62,7 @@ router.post('/', [
         body('description').trim().notEmpty().withMessage('Description is required'),
         body('category').isMongoId().withMessage('Valid category ID is required'),
         body('stock').isNumeric().withMessage('Stock must be a number')
+        
     ]
 ], async (req, res) => {
     const errors = validationResult(req);

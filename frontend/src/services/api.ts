@@ -49,6 +49,19 @@ export interface DashboardStats {
   activeCarts: number;
 }
 
+export interface CartItem {
+  product: Product;
+  quantity: number;
+}
+
+export interface CartResponse {
+  success: boolean;
+  data: {
+    items: CartItem[];
+    totalPrice: number;
+  };
+}
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -92,24 +105,38 @@ export const register = (data: { name: string; email: string; password: string }
 export const getCurrentUser = () =>
   api.get<{ success: boolean; data: Customer }>('/auth/me');
 
+// Favorites
+export const getFavorites = () => api.get<{ success: boolean; data: { product: Product }[] }>('/favorites');
+export const addToFavorites = (productId: string) => api.post<{ success: boolean; data: { product: Product } }>(`/favorites/${productId}`);
+export const removeFromFavorites = (productId: string) => api.delete<{ success: boolean; data: {} }>(`/favorites/${productId}`);
+
+// Cart
+export const getCart = () => api.get<CartResponse>('/cart');
+export const addToCart = (productId: string, quantity: number) => 
+  api.post<CartResponse>('/cart/items', { productId, quantity });
+export const updateCartItem = (productId: string, quantity: number) => 
+  api.put<CartResponse>(`/cart/items/${productId}`, { quantity });
+export const removeFromCart = (productId: string) => 
+  api.delete<CartResponse>(`/cart/items/${productId}`);
+
 // Add request interceptor for authentication
 api.interceptors.request.use(
-  (config: any) => {
+  (config) => {
     const token = localStorage.getItem('token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error: any) => {
+  (error) => {
     return Promise.reject(error);
   }
 );
 
 // Add response interceptor for error handling
 api.interceptors.response.use(
-  (response: any) => response,
-  (error: any) => {
+  (response) => response,
+  (error) => {
     if (error.response?.status === 401) {
       // Handle unauthorized access
       localStorage.removeItem('token');
