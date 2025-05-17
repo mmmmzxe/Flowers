@@ -1,6 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { getCategories } from "../services/api";
 import type { Category } from "../services/api";
+import Slider from "react-slick";
+import "slick-carousel/slick/slick.css";
+import "slick-carousel/slick/slick-theme.css";
 
 interface CategoryWithCount extends Category {
   count: number;
@@ -13,29 +16,17 @@ const demoImages = [
   "https://images.unsplash.com/photo-1501004318641-b39e6451bec6?auto=format&fit=crop&w=400&q=80", // Fruit
 ];
 
-const formatImageUrl = (url: string) => {
-  if (!url) return '';
-  if (url.includes('i.postimg.cc')) {
-    return url;
-  }
-  const parts = url.split('/');
-  const filename = parts.pop();
-  const id = parts.pop();
-  return `https://i.postimg.cc/${id}/${filename}`;
-};
-
 const PlantTypes = () => {
   const [categories, setCategories] = useState<CategoryWithCount[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch categories and simulate plant counts for demo
+    
     const fetchCategories = async () => {
       try {
         const res = await getCategories();
-        // Simulate counts for demo; replace with real counts if available
-        const demoCounts = [21, 4, 8, 10];
-        const cats = res.data.data.slice(0, 4).map((cat, idx) => ({
+        const demoCounts = [21, 4, 8, 10 , 50 , 70];
+        const cats = res.data.data.map((cat, idx) => ({
           ...cat,
           count: demoCounts[idx] || 0,
         }));
@@ -49,6 +40,22 @@ const PlantTypes = () => {
     fetchCategories();
   }, []);
 
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 4,
+    slidesToScroll: 1,
+    responsive: [
+      {
+        breakpoint: 900,
+        settings: {
+          slidesToShow: 1,
+        },
+      },
+    ],
+  };
+
   if (loading) {
     return <div className="text-center py-10 text-gray-500">Loading...</div>;
   }
@@ -56,28 +63,25 @@ const PlantTypes = () => {
   return (
     <div className="flex flex-col items-center py-10">
       <h2 className="text-4xl font-serif font-semibold text-[#395A47] mb-10">4 types of plants</h2>
-      <div className="flex gap-8">
-        {categories.map((cat, idx) => (
-         <div className="flex flex-col">
-          <div
-            key={cat._id}
-            className="relative rounded-2xl overflow-hidden shadow-lg w-[300px] h-48 flex-shrink-0"
-            style={{
-              backgroundImage: `url(${(cat.image || demoImages[idx])})`,
-              backgroundSize: "cover",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-            }}
-          >
-       
-          
-         
-           
-          </div>
-            <div className="text-2xl font-semibold drop-shadow-lg">{cat.title}</div>
-            <div className="  text-lg font-medium drop-shadow-lg">{cat.count} PLANTS</div>
+      <div className="w-full max-w-7xl">
+        <Slider {...sliderSettings}>
+          {categories.map((cat, idx) => (
+            <div key={cat._id} className="flex flex-col items-center px-2">
+              <div
+                className="relative overflow-hidden h-48 flex-shrink-0"
+                style={{
+                  backgroundImage: `url(${cat.image || demoImages[idx]})`,
+                  backgroundSize: "contain",
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "center",
+                }}
+              >
+              </div>
+              <div className="text-md font-semibold drop-shadow-lg mt-4">{cat.title}</div>
+              <div className="text-sm font-medium drop-shadow-lg">{cat.count} PLANTS</div>
             </div>
-        ))}
+          ))}
+        </Slider>
       </div>
     </div>
   );

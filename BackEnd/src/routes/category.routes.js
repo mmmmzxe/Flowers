@@ -24,7 +24,7 @@ router.get('/', async (req, res) => {
 });
 
 // @route   GET /api/categories/:id
-// @desc    Get single category
+// @desc    Get single category and its products
 // @access  Public
 router.get('/:id', async (req, res) => {
     try {
@@ -37,9 +37,16 @@ router.get('/:id', async (req, res) => {
             });
         }
 
+        // Find products in this category
+        const Product = require('../models/product.model');
+        const products = await Product.find({ category: req.params.id });
+
         res.json({
             success: true,
-            data: category
+            data: {
+                category,
+                products
+            }
         });
     } catch (err) {
         res.status(500).json({
@@ -152,4 +159,4 @@ router.delete('/:id', [protect, authorize('admin')], async (req, res) => {
     }
 });
 
-module.exports = router; 
+module.exports = router;
